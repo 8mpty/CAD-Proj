@@ -20,7 +20,7 @@ const Items = () => {
 
   const fetchItems = async (search = "") => {
     try {
-      const url = new URL("http://localhost:3001/api/items");
+      const url = new URL(`http://${import.meta.env.VITE_AWS_URL}:3001/api/items`);
       if (search) {
         url.searchParams.append("search", search);
       }

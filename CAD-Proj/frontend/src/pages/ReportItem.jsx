@@ -55,7 +55,7 @@ const ReportItem = () => {
       const formData = new FormData();
       formData.append("image", file);
 
-      const response = await fetch("http://localhost:3001/api/analyze-image", {
+      const response = await fetch(`http://${import.meta.env.VITE_AWS_URL}:3001/api/analyze-image`, {
         method: "POST",
         body: formData,
       });
@@ -96,7 +96,7 @@ const ReportItem = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/items", {
+      const response = await fetch(`http://${import.meta.env.VITE_AWS_URL}:3001/api/items`, {
         method: "POST",
         body: formData,
       });

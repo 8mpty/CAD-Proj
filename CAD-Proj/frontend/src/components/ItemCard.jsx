@@ -30,7 +30,7 @@ const ItemCard = ({ item, onClaimSuccess }) => {
     setClaiming(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/api/items/${item.id}/claim`,
+        `http://${import.meta.env.VITE_AWS_URL}:3001/api/items/${item.id}/claim`,
         {
           method: "PUT",
         }

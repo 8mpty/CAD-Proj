@@ -36,7 +36,7 @@ const NotificationSubscription = () => {
   const fetchSubscriptions = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/subscriptions/${email}`
+        `http://${import.meta.env.VITE_AWS_URL}:3001/api/subscriptions/${email}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -50,7 +50,7 @@ const NotificationSubscription = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3001/api/subscribe", {
+      const response = await fetch(`http://${import.meta.env.VITE_AWS_URL}:3001/api/subscribe`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

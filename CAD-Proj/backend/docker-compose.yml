@@ -1,0 +1,7 @@
+services:
+  ecp-backend:
+    image: cad-backend
+    container_name: cad-backend
+    ports:
+      - "3001:3001"
+    restart: always
