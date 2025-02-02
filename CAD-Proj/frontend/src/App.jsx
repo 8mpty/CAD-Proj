@@ -6,6 +6,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import Items from './pages/Items';
 import ReportItem from './pages/ReportItem';
+import NotificationSubscription from './components/NotificationSubscription'
 
 const theme = createTheme({
   palette: {
@@ -28,6 +29,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/items" element={<Items />} />
           <Route path="/report" element={<ReportItem />} />
+          <Route path="/notifications" element={<NotificationSubscription />} />
         </Routes>
       </Router>
     </ThemeProvider>
