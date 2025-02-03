@@ -40,7 +40,6 @@ const getAwsClient = async (ClientClass) => {
   } catch (error) {
     console.log("Failed to get defaultCredentials, using .env instead");
     
-    // Fallback to environment variables
     return new ClientClass({
       region: process.env.AWS_REGION || "us-east-1",
       credentials: {

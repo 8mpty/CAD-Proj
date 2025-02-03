@@ -6,25 +6,17 @@ import {
   Typography,
   Button,
   Box,
+  useTheme,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Chip,
+  DialogActions 
 } from "@mui/material";
 
 const ItemCard = ({ item, onClaimSuccess }) => {
-  const [imageError, setImageError] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [claiming, setClaiming] = useState(false);
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  const handleClaimClick = () => {
-    setOpenDialog(true);
-  };
+  const theme = useTheme();
 
   const handleClaimConfirm = async () => {
     setClaiming(true);
@@ -51,97 +43,98 @@ const ItemCard = ({ item, onClaimSuccess }) => {
   };
 
   return (
-    <>
-      <Card
+    <Card 
+      elevation={0}
+      sx={{
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: 3,
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: theme.shadows[4]
+        }
+      }}
+    >
+      <CardMedia
+        component="img"
+        height="240"
+        image={item.image_url}
+        alt={item.name}
         sx={{
-          maxWidth: 345,
-          m: 2,
-          opacity: item.claimed_status ? 0.7 : 1,
-          position: "relative",
+          objectFit: 'cover',
+          filter: item.claimed_status ? 'grayscale(100%)' : 'none'
+        }}
+      />
+      <CardContent sx={{ p: 3 }}>
+        <Typography 
+          variant="h6" 
+          gutterBottom
+          sx={{ fontWeight: 600 }}
+        >
+          {item.name}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+          <Typography variant="body2" color="text.secondary">
+            📍 {item.location}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            📅 {new Date(item.date_found).toLocaleDateString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            🏷️ {item.category}
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          fullWidth
+          disabled={item.claimed_status}
+          onClick={() => setOpenDialog(true)}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            py: 1.5,
+            fontWeight: 500
+          }}
+        >
+          {item.claimed_status ? 'Already Claimed' : 'Claim Item'}
+        </Button>
+      </CardContent>
+      <Dialog 
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)}
+        PaperProps={{
+          sx: { borderRadius: 3 }
         }}
       >
-        {item.claimed_status && (
-          <Chip
-            label="CLAIMED"
-            color="primary"
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              zIndex: 1,
-            }}
-          />
-        )}
-        <CardMedia
-          component="img"
-          height="200"
-          image={imageError ? "/placeholder-image.jpg" : item.image_url}
-          onError={handleImageError}
-          alt={item.name}
-          sx={{
-            objectFit: "cover",
-            bgcolor: "grey.200",
-            filter: item.claimed_status ? "grayscale(100%)" : "none",
-          }}
-        />
-        <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-            {item.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Category: {item.category}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Location Found: {item.location}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Date Found: {new Date(item.date_found).toLocaleDateString()}
-          </Typography>
-          {item.description && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Description: {item.description}
-            </Typography>
-          )}
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleClaimClick}
-              disabled={item.claimed_status}
-              fullWidth
-            >
-              {item.claimed_status ? "Already Claimed" : "Claim Item"}
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>Confirm Claim</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to claim this item?
-            <br />
-            Item: {item.name}
-            <br />
-            Category: {item.category}
-            <br />
-            Location: {item.location}
+            <Box component="ul" sx={{ mt: 2, pl: 2 }}>
+              <li>Item: {item.name}</li>
+              <li>Category: {item.category}</li>
+              <li>Location: {item.location}</li>
+            </Box>
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button 
+            onClick={() => setOpenDialog(false)}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleClaimConfirm}
             variant="contained"
-            color="primary"
             disabled={claiming}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
           >
-            Confirm Claim
+            {claiming ? 'Claiming...' : 'Confirm Claim'}
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </Card>
   );
 };
 
