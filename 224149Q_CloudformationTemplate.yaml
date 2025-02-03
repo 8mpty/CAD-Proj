@@ -1,15 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'CloudFormation template for EC2 instance with Docker and Node.js'
-
 Resources:
   EC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-04b4f1a9cf54c11d0
       InstanceType: t2.micro
-      SecurityGroups: 
+      SecurityGroups:
         - CAD-EC2-SG
-      IamInstanceProfile: arn:aws:iam::312171776467:instance-profile/LabInstanceProfile
+      IamInstanceProfile: LabInstanceProfile
       DisableApiTermination: false
       UserData:
         Fn::Base64: !Sub |
@@ -19,48 +18,45 @@ Resources:
           curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
           bash nodesource_setup.sh
           apt-get install -y nodejs
-
           # Remove old versions of Docker
           for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do apt-get remove -y $pkg; done
-
           # Install Docker prerequisites
           apt-get update
           apt-get install -y ca-certificates curl
           install -m 0755 -d /etc/apt/keyrings
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           chmod a+r /etc/apt/keyrings/docker.asc
-
           # Add Docker repository
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
           # Install Docker
           apt-get update
           apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
           # Add docker group and user
           groupadd docker
           usermod -aG docker ubuntu
           newgrp docker
-
           # Clone and setup project
           git clone https://github.com/8mpty/CAD-Proj.git
           cd CAD-Proj/
           git checkout dev
-          cd backend
+          cd CAD-Proj/backend/
           cp .env.dev .env
           npm i
-
+      Tags:
+        - Key: Name
+          Value: CAD-EC2-1
   ElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
       Domain: vpc
-
+      Tags:
+        - Key: Name
+          Value: CAD-ELIP-1
   IPAssociation:
     Type: 'AWS::EC2::EIPAssociation'
     Properties:
       InstanceId: !Ref EC2Instance
       EIP: !Ref ElasticIP
-
 Outputs:
   InstanceID:
     Description: ID of the EC2 instance
