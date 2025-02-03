@@ -6,6 +6,7 @@ Resources:
     Properties:
       ImageId: ami-04b4f1a9cf54c11d0
       InstanceType: t2.micro
+      KeyName: vockey
       SecurityGroups:
         - CAD-EC2-SG
       IamInstanceProfile: LabInstanceProfile
@@ -36,8 +37,10 @@ Resources:
           usermod -aG docker ubuntu
           newgrp docker
           # Clone and setup project
+          cd /home/ubuntu
           git clone https://github.com/8mpty/CAD-Proj.git
           cd CAD-Proj/
+          git config --global --add safe.directory /home/ubuntu/CAD-Proj
           git checkout dev
           cd CAD-Proj/backend/
           cp .env.dev .env
