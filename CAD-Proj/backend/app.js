@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const { defaultProvider } = require("@aws-sdk/credential-provider-node");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const {
   SNSClient,
@@ -27,20 +28,75 @@ const upload = multer({
   },
 });
 
-const getAwsClient = (ClientClass) => {
-  return new ClientClass({
-    region: process.env.AWS_REGION || "us-east-1",
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      sessionToken: process.env.AWS_SESSION_TOKEN,
-    },
-  });
+const getAwsClient = async (ClientClass) => {
+  try {
+    // Try to get credentials from default provider
+    const credentials = await defaultProvider()();
+    
+    return new ClientClass({
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials
+    });
+  } catch (error) {
+    console.log("Failed to get defaultCredentials, using .env instead");
+    
+    // Fallback to environment variables
+    return new ClientClass({
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        sessionToken: process.env.AWS_SESSION_TOKEN
+      }
+    });
+  }
 };
 
-const s3Client = getAwsClient(S3Client);
-const snsClient = getAwsClient(SNSClient);
-const rekognitionClient = getAwsClient(RekognitionClient);
+
+let s3Client, snsClient, rekognitionClient;
+
+const requireAwsClients = (req, res, next) => {
+  if (!s3Client || !snsClient || !rekognitionClient) {
+    return res.status(503).json({ error: "AWS services not initialized yet" });
+  }
+  next();
+};
+
+const initialize = async () => {
+  try {
+    // Initialize AWS clients
+    const clients = await initializeAwsClients();
+    ({ s3Client, snsClient, rekognitionClient } = clients);
+    console.log("AWS clients initialized successfully");
+
+    // Initialize database pool (your existing database initialization code here)
+    await initializeDatabase()
+      .then((appPool) => {
+        pool = appPool;
+        console.log("Database connection pool established");
+      })
+      .catch((error) => {
+        console.error("Failed to initialize database:", error);
+        throw error;  // Re-throw to be caught by outer try-catch
+      });
+
+    // Only start the server after everything is initialized
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to initialize services:", error);
+    process.exit(1);
+  }
+};
+
+const initializeAwsClients = async () => {
+  const s3Client = await getAwsClient(S3Client);
+  const snsClient = await getAwsClient(SNSClient);
+  const rekognitionClient = await getAwsClient(RekognitionClient);
+  
+  return { s3Client, snsClient, rekognitionClient };
+};
 
 const categoryTopics = {};
 
@@ -256,7 +312,7 @@ const uploadToS3 = async (file) => {
   }
 };
 
-app.post("/api/subscribe", async (req, res) => {
+app.post("/api/subscribe", requireAwsClients, async (req, res) => {
   try {
     const { email, category } = req.body;
 
@@ -341,7 +397,7 @@ const notifySubscribers = async (category, itemDetails) => {
   }
 };
 
-app.post("/api/items", upload.single("image"), async (req, res) => {
+app.post("/api/items", requireAwsClients, upload.single("image"), async (req, res) => {
   if (!pool) {
     return res.status(500).json({ error: "Database connection not ready" });
   }
@@ -385,7 +441,7 @@ app.post("/api/items", upload.single("image"), async (req, res) => {
   }
 });
 
-app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
+app.post('/api/analyze-image', requireAwsClients, upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Image is required' });
   }
@@ -458,6 +514,8 @@ app.get("/api/items", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Server running on port ${port}`);
+// });
+
+initialize()
